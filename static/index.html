@@ -1300,7 +1300,7 @@
               <option value="pending_payment">待付款</option>
               <option value="pending_ship">待发货</option>
               <option value="partial_success">部分发货</option>
-              <option value="partial_pending_finalize">部分待收尾</option>
+              <option value="partial_pending_finalize">待补确认</option>
               <option value="shipped">已发货</option>
               <option value="completed">交易成功</option>
               <option value="refunding">退款中</option>
@@ -2963,6 +2963,7 @@
                     </div>
                     <div class="d-flex gap-1">
                       <button class="btn btn-sm btn-outline-secondary" onclick="loadMoreChatMessages()" title="加载更多"><i class="bi bi-clock-history"></i></button>
+                      <button class="btn btn-sm btn-outline-success" onclick="openOrdersFromChat()" title="跳转到订单页查看该买家的订单"><i class="bi bi-receipt"></i><span class="d-none d-xl-inline ms-1">订单</span></button>
                       <button class="btn btn-sm btn-outline-primary" onclick="toggleReplyPanel()" title="商品回复" id="btnToggleReply"><i class="bi bi-chat-right-text"></i></button>
                     </div>
                   </div>

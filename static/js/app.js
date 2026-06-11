@@ -57,6 +57,7 @@ let ordersStreamAbortController = null;
 let ordersStreamReconnectTimer = null;
 let ordersStreamRetryCount = 0;
 let ordersStreamShouldRun = false;
+let pendingOrderLocator = null;
 let orderHistorySyncModalInstance = null;
 let orderHistorySyncPollingTimer = null;
 let activeOrderHistorySyncJobId = '';
@@ -16346,6 +16347,10 @@ async function loadOrders() {
         // 加载订单列表
         await refreshOrdersData();
 
+        if (pendingOrderLocator) {
+            applyPendingOrderLocator();
+        }
+
         startOrdersStream();
     } catch (error) {
         console.error('加载订单列表失败:', error);
@@ -16416,6 +16421,56 @@ async function loadAllOrders() {
 // 根据Cookie加载订单
 async function loadOrdersByCookie() {
     filterOrders(false);
+}
+
+function normalizeOrderLocatorKeyword(value) {
+    return String(value || '').trim().replace(/@goofish$/i, '');
+}
+
+function applyPendingOrderLocator() {
+    const locator = pendingOrderLocator;
+    if (!locator) return false;
+
+    const searchInput = document.getElementById('orderSearchInput');
+    const statusFilter = document.getElementById('orderStatusFilter');
+    const cookieFilter = document.getElementById('orderCookieFilter');
+    const keyword = normalizeOrderLocatorKeyword(locator.keyword || locator.buyerId || locator.buyerNick || locator.chatId);
+
+    if (searchInput) searchInput.value = keyword;
+    if (statusFilter) statusFilter.value = '';
+    if (cookieFilter && locator.cookieId) {
+        const hasMatchedOption = Array.from(cookieFilter.options || []).some(option => option.value === locator.cookieId);
+        cookieFilter.value = hasMatchedOption ? locator.cookieId : '';
+    }
+
+    pendingOrderLocator = null;
+    filterOrders(true);
+
+    const matchedText = filteredOrdersData.length ? `，已定位到 ${filteredOrdersData.length} 条订单` : '，暂未匹配到订单';
+    showToast(`已跳转到独立订单页${matchedText}`, filteredOrdersData.length ? 'success' : 'info');
+    return true;
+}
+
+function openOrdersFromChat() {
+    const buyerKeyword = normalizeOrderLocatorKeyword(chatCurrentToUserId || chatCurrentSenderName || chatCurrentChatId);
+    if (!chatCurrentCookieId || !buyerKeyword) {
+        showToast('当前会话缺少账号或买家信息，无法定位订单', 'warning');
+        return;
+    }
+
+    pendingOrderLocator = {
+        cookieId: chatCurrentCookieId,
+        buyerId: normalizeOrderLocatorKeyword(chatCurrentToUserId),
+        buyerNick: chatCurrentSenderName,
+        chatId: chatCurrentChatId,
+        keyword: buyerKeyword,
+    };
+
+    const wasOrdersActive = isOrdersSectionActive();
+    showSection('orders');
+    if (wasOrdersActive) {
+        applyPendingOrderLocator();
+    }
 }
 
 // 筛选订单
