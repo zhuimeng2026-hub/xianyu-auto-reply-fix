@@ -3589,12 +3589,15 @@ class XianyuLive:
                         logger.info(f"🎉 自动确认发货成功！订单ID: {order_id}")
                     else:
                         confirm_error = confirm_result.get('error', '未知错误')
+                        stop_confirm_retry = self._is_non_retryable_platform_confirm_error(confirm_error, confirm_result)
                         return {
                             'success': False,
                             'error': f"自动确认发货失败: {confirm_error}",
-                            'pending_confirm': True,
+                            'pending_confirm': not stop_confirm_retry,
                             'platform_confirm_failed': True,
-                            'confirm_retry_required': True,
+                            'confirm_retry_required': not stop_confirm_retry,
+                            'non_retryable_platform_confirm': stop_confirm_retry,
+                            'stop_confirm_retry': stop_confirm_retry,
                             'session_expired': bool(confirm_result.get('session_expired')),
                             'need_relogin': bool(confirm_result.get('need_relogin')),
                             'confirm_result': confirm_result,
@@ -3659,6 +3662,66 @@ class XianyuLive:
             delivery_meta=meta,
             last_error=last_error,
         )
+
+    def _get_normalized_local_order_status(self, order_id: str) -> str:
+        if not order_id:
+            return ''
+        try:
+            from db_manager import db_manager
+            order = db_manager.get_order_by_id(order_id)
+            if not order:
+                return ''
+            return db_manager._normalize_order_status(order.get('order_status'))
+        except Exception as e:
+            logger.debug(f"【{self.cookie_id}】读取本地订单状态失败: order_id={order_id}, error={self._safe_str(e)}")
+            return ''
+
+    def _is_platform_confirm_terminal_status(self, status: str) -> bool:
+        normalized = str(status or '').strip()
+        return normalized in {
+            'shipped',
+            'completed',
+            'cancelled',
+            'refunding',
+            'refund_cancelled',
+        }
+
+    def _is_non_retryable_platform_confirm_error(self, error: Any, confirm_result: Any = None) -> bool:
+        error_text = str(error or '')
+        if isinstance(confirm_result, dict) and (
+            confirm_result.get('order_status_error')
+            or confirm_result.get('non_retryable')
+            or confirm_result.get('stop_confirm_retry')
+        ):
+            return True
+        return 'ORDER_STATUS_ERROR' in error_text or '订单状态不正确' in error_text
+
+    def _mark_delivery_platform_confirm_no_longer_required(self, order_id: str, item_id: str, buyer_id: str,
+                                                           delivery_meta: dict = None, reason: str = '',
+                                                           channel: str = 'auto') -> None:
+        """平台已处于不可/无需补确认的终态时，清理待补确认，避免无限重试。"""
+        if not order_id:
+            return
+        meta = dict(delivery_meta or {})
+        meta.update({
+            'pending_confirm': False,
+            'pending_platform_confirm': False,
+            'confirm_retry_required': False,
+            'platform_confirm_status': 'not_required_terminal',
+            'confirm_retry_stopped': True,
+            'confirm_retry_stopped_reason': str(reason or '订单已处于平台终态，无需继续补确认'),
+            'confirm_retry_stopped_at': datetime.now().isoformat(timespec='seconds'),
+        })
+        self._persist_delivery_finalization_state(
+            order_id=order_id,
+            item_id=item_id,
+            buyer_id=buyer_id,
+            delivery_meta=meta,
+            channel=channel or 'auto',
+            status='finalized',
+            last_error=str(reason or '订单已处于平台终态，无需继续补确认'),
+        )
+        logger.warning(f"【{self.cookie_id}】订单 {order_id} 停止补确认重试: {reason or '订单已处于平台终态'}")
 
     def _is_platform_confirm_failure_error(self, error: Any) -> bool:
         """判断发送成功后的失败是否属于闲鱼平台确认发货失败。"""
@@ -3839,6 +3902,37 @@ class XianyuLive:
                     f"unit={unit_index}, source={source}"
                 )
 
+                local_order_status = self._get_normalized_local_order_status(state_order_id)
+                if self._is_platform_confirm_terminal_status(local_order_status):
+                    stop_reason = f"本地订单状态已是 {local_order_status}，无需继续补确认平台发货状态"
+                    self._mark_delivery_platform_confirm_no_longer_required(
+                        order_id=state_order_id,
+                        item_id=state_item_id,
+                        buyer_id=state_buyer_id,
+                        delivery_meta=meta,
+                        reason=stop_reason,
+                        channel=source or 'manual',
+                    )
+                    self._record_delivery_log(
+                        order_id=state_order_id,
+                        item_id=state_item_id,
+                        buyer_id=state_buyer_id,
+                        status='success',
+                        reason=f'停止补确认重试: {stop_reason}',
+                        channel=source or 'manual',
+                        rule_meta=meta,
+                    )
+                    confirmed += 1
+                    touched_orders.add(state_order_id)
+                    results.append({
+                        'order_id': state_order_id,
+                        'unit_index': unit_index,
+                        'success': True,
+                        'message': stop_reason,
+                        'stopped_retry': True,
+                    })
+                    continue
+
                 finalize_result = await self._finalize_delivery_after_send(
                     delivery_meta=meta,
                     order_id=state_order_id,
@@ -3884,6 +3978,36 @@ class XianyuLive:
                     })
                 else:
                     error_text = finalize_result.get('error') or '平台确认发货仍失败'
+                    confirm_result = finalize_result.get('confirm_result') or {}
+                    if self._is_non_retryable_platform_confirm_error(error_text, confirm_result):
+                        stop_reason = f"平台返回订单状态不正确，停止补确认重试: {error_text}"
+                        self._mark_delivery_platform_confirm_no_longer_required(
+                            order_id=state_order_id,
+                            item_id=state_item_id,
+                            buyer_id=state_buyer_id,
+                            delivery_meta=meta,
+                            reason=stop_reason,
+                            channel=source or 'manual',
+                        )
+                        self._record_delivery_log(
+                            order_id=state_order_id,
+                            item_id=state_item_id,
+                            buyer_id=state_buyer_id,
+                            status='success',
+                            reason=f'停止补确认重试: {stop_reason}',
+                            channel=source or 'manual',
+                            rule_meta=meta,
+                        )
+                        confirmed += 1
+                        results.append({
+                            'order_id': state_order_id,
+                            'unit_index': unit_index,
+                            'success': True,
+                            'message': stop_reason,
+                            'stopped_retry': True,
+                        })
+                        continue
+
                     self._mark_delivery_pending_platform_confirm(
                         order_id=state_order_id,
                         item_id=state_item_id,

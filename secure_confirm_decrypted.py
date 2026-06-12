@@ -231,6 +231,16 @@ class SecureConfirm:
                                 "confirm_retry_required": True,
                             }
 
+                        if 'ORDER_STATUS_ERROR' in error_msg or '订单状态不正确' in error_msg:
+                            return {
+                                "error": error_msg,
+                                "order_id": order_id,
+                                "order_status_error": True,
+                                "non_retryable": True,
+                                "stop_confirm_retry": True,
+                                "confirm_retry_required": False,
+                            }
+
                         return await self.auto_confirm(order_id, item_id, retry_count + 1)
 
 
