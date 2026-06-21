@@ -210,7 +210,7 @@ function showSection(sectionName) {
     clearInterval(window.autoRefreshInterval);
     window.autoRefreshInterval = null;
     const button = document.querySelector('#autoRefreshText');
-    const icon = button?.previousElementSibling;
+    const icon = (button && button.previousElementSibling);
     if (button) {
         button.textContent = '开启自动刷新';
         if (icon) icon.className = 'bi bi-play-circle me-1';
@@ -399,13 +399,13 @@ function getDashboardAnnouncementDismissKey(id) {
 
 function normalizeDashboardAnnouncementState(payload) {
     return {
-        current: payload?.current || null,
-        history: Array.isArray(payload?.history) ? payload.history : []
+        current: (payload && payload.current) || null,
+        history: Array.isArray((payload && payload.history)) ? payload.history : []
     };
 }
 
 function isDashboardAnnouncementDismissed(announcement) {
-    const announcementId = String(announcement?.id || '').trim();
+    const announcementId = String((announcement && announcement.id) || '').trim();
     if (!announcementId) {
         return false;
     }
@@ -413,7 +413,7 @@ function isDashboardAnnouncementDismissed(announcement) {
 }
 
 function dismissDashboardAnnouncement(announcement) {
-    const announcementId = String(announcement?.id || '').trim();
+    const announcementId = String((announcement && announcement.id) || '').trim();
     if (announcementId) {
         localStorage.setItem(getDashboardAnnouncementDismissKey(announcementId), 'true');
     }
@@ -421,7 +421,7 @@ function dismissDashboardAnnouncement(announcement) {
 }
 
 function handleDashboardAnnouncementAction(announcement) {
-    const actionType = String(announcement?.action_type || '').trim().toLowerCase();
+    const actionType = String((announcement && announcement.action_type) || '').trim().toLowerCase();
     if (!actionType) {
         return;
     }
@@ -437,7 +437,7 @@ function handleDashboardAnnouncementAction(announcement) {
     }
 
     if (actionType === 'url') {
-        const targetUrl = String(announcement?.action_url || '').trim();
+        const targetUrl = String((announcement && announcement.action_url) || '').trim();
         if (targetUrl) {
             window.open(targetUrl, '_blank', 'noopener,noreferrer');
         }
@@ -463,9 +463,9 @@ function getDashboardAnnouncementStatusText(status) {
 
 function getDashboardAnnouncementDisplayTime(announcement) {
     const timeValue = String(
-        announcement?.published_at
-        || announcement?.start_at
-        || announcement?.end_at
+        (announcement && announcement.published_at)
+        || (announcement && announcement.start_at)
+        || (announcement && announcement.end_at)
         || ''
     ).trim();
     if (!timeValue) {
@@ -488,20 +488,20 @@ function showDashboardAnnouncementHistoryModal() {
     }
 
     const historyHtml = history.map((announcement, index) => {
-        const level = ['info', 'success', 'warning', 'danger'].includes(String(announcement?.level || '').trim().toLowerCase())
+        const level = ['info', 'success', 'warning', 'danger'].includes(String((announcement && announcement.level) || '').trim().toLowerCase())
             ? String(announcement.level || '').trim().toLowerCase()
             : 'info';
-        const status = String(announcement?.status || '').trim().toLowerCase() || 'disabled';
-        const title = String(announcement?.title || '').trim() || '未命名公告';
-        const message = String(announcement?.message || '').trim() || '暂无内容';
-        const actionText = String(announcement?.action_type ? (announcement?.action_text || '') : '').trim();
+        const status = String((announcement && announcement.status) || '').trim().toLowerCase() || 'disabled';
+        const title = String((announcement && announcement.title) || '').trim() || '未命名公告';
+        const message = String((announcement && announcement.message) || '').trim() || '暂无内容';
+        const actionText = String((announcement && announcement.action_type) ? ((announcement && announcement.action_text) || '') : '').trim();
         const timeText = getDashboardAnnouncementDisplayTime(announcement);
-        const currentBadge = announcement?.is_current
+        const currentBadge = (announcement && announcement.is_current)
             ? '<span class="dashboard-announcement-history-badge is-current">当前</span>'
             : '';
 
         return `
-            <article class="dashboard-announcement-history-item ${announcement?.is_current ? 'is-current' : ''}">
+            <article class="dashboard-announcement-history-item ${(announcement && announcement.is_current) ? 'is-current' : ''}">
                 <div class="dashboard-announcement-history-head">
                     <div class="dashboard-announcement-history-meta">
                         <div class="dashboard-announcement-history-title-row">
@@ -651,7 +651,7 @@ function renderDashboardAnnouncement() {
 
 async function loadDashboardAnnouncement() {
     const result = await fetchDashboardResource('/api/announcement', { success: false, current: null, history: [] });
-    dashboardAnnouncementState = normalizeDashboardAnnouncementState(result?.success ? result : null);
+    dashboardAnnouncementState = normalizeDashboardAnnouncementState((result && result.success) ? result : null);
     renderDashboardAnnouncement();
 }
 
@@ -691,7 +691,7 @@ function renderDashboardAccountMetric(label, value, tone = 'off') {
 
 function isRuntimeStatusHealthy(runtimeStatus) {
     return Boolean(
-        runtimeStatus?.running
+        (runtimeStatus && runtimeStatus.running)
         && runtimeStatus.ws_ready
         && runtimeStatus.session_ready
         && runtimeStatus.has_current_token
@@ -718,7 +718,7 @@ function getRuntimeStatusRecentAnchor(runtimeStatus) {
 }
 
 function shouldAutoRetryRuntimeStatus(runtimeStatus) {
-    if (!runtimeStatus?.running) {
+    if (!(runtimeStatus && runtimeStatus.running)) {
         return false;
     }
 
@@ -797,7 +797,7 @@ function scheduleDashboardRuntimeAutoRetry(accounts) {
     }
 
     const hasTransientState = accounts.some(account => {
-        const connectionState = String(account?.runtime_status?.connection_state || '').trim();
+        const connectionState = String((account && account.runtime_status)?.connection_state || '').trim();
         return connectionState === 'connecting' || connectionState === 'reconnecting';
     });
     const delay = hasTransientState ? 3500 : 5000;
@@ -835,7 +835,7 @@ function scheduleAboutRuntimeAutoRetry(accountId, runtimeStatus) {
         return;
     }
 
-    const connectionState = String(runtimeStatus?.connection_state || '').trim();
+    const connectionState = String((runtimeStatus && runtimeStatus.connection_state) || '').trim();
     const delay = (connectionState === 'connecting' || connectionState === 'reconnecting') ? 3000 : 5000;
 
     aboutRuntimeRetryTimer = setTimeout(() => {
@@ -931,8 +931,8 @@ function renderStatusNoteBadge(statusNote, className) {
 function renderDashboardAccountCard(account) {
     const isEnabled = account.enabled === undefined ? true : account.enabled;
     const keywordCount = account.keywordCount || 0;
-    const defaultReplyEnabled = Boolean(account.defaultReply?.enabled);
-    const aiReplyEnabled = Boolean(account.aiReply?.ai_enabled);
+    const defaultReplyEnabled = Boolean(account.(defaultReply && defaultReply.enabled));
+    const aiReplyEnabled = Boolean(account.(aiReply && aiReply.ai_enabled));
     const autoConfirmEnabled = account.auto_confirm === undefined ? true : Boolean(account.auto_confirm);
     const autoCommentEnabled = Boolean(account.auto_comment);
     const hasCredentials = Boolean(account.username) && Boolean(account.has_password);
@@ -1228,7 +1228,7 @@ async function loadOrderDashboardMetrics() {
         let todayOrders = 0;
 
         orders.forEach(order => {
-            const normalizedStatus = normalizeOrderStatus(order?.order_status);
+            const normalizedStatus = normalizeOrderStatus((order && order.order_status));
             const parsedAmount = parseOrderAmount(order);
 
             if (isSalesEligibleOrder(normalizedStatus) && parsedAmount !== null) {
@@ -1754,11 +1754,11 @@ function getChartTitle(period) {
 
 function parseOrderAmount(order) {
     const amountCandidates = [
-        order?.amount,
-        order?.total_amount,
-        order?.order_amount,
-        order?.pay_amount,
-        order?.price
+        (order && order.amount),
+        (order && order.total_amount),
+        (order && order.order_amount),
+        (order && order.pay_amount),
+        (order && order.price)
     ];
 
     for (const amount of amountCandidates) {
@@ -1914,13 +1914,13 @@ function getBeijingDateKey(dateInput) {
 }
 
 function getEffectiveOrderSalesTime(order) {
-    const platformPaidAt = String(order?.platform_paid_at || '').trim();
+    const platformPaidAt = String((order && order.platform_paid_at) || '').trim();
     if (platformPaidAt) return platformPaidAt;
 
-    const platformCreatedAt = String(order?.platform_created_at || '').trim();
+    const platformCreatedAt = String((order && order.platform_created_at) || '').trim();
     if (platformCreatedAt) return platformCreatedAt;
 
-    const createdAt = String(order?.created_at || '').trim();
+    const createdAt = String((order && order.created_at) || '').trim();
     return createdAt || null;
 }
 
@@ -2394,7 +2394,7 @@ async function loadAccountKeywords() {
         const accounts = await accountResponse.json();
         const currentAccount = accounts.find(acc => acc.id === accountId);
         accountStatus = currentAccount ? (currentAccount.enabled === undefined ? true : currentAccount.enabled) : true;
-        console.log(`加载关键词时账号 ${accountId} 状态: enabled=${currentAccount?.enabled}, accountStatus=${accountStatus}`); // 调试信息
+        console.log(`加载关键词时账号 ${accountId} 状态: enabled=${(currentAccount && currentAccount.enabled)}, accountStatus=${accountStatus}`); // 调试信息
     }
 
     const response = await fetch(`${apiBase}/keywords-with-item-id/${accountId}`, {
@@ -3440,21 +3440,21 @@ async function loadMessageFilters(page = 1) {
     if (!tableBody) return;
 
     const pageSizeSelect = document.getElementById('messageFilterPageSize');
-    const pageSize = Math.max(1, parseInt(pageSizeSelect?.value || '20', 10) || 20);
+    const pageSize = Math.max(1, parseInt((pageSizeSelect && pageSizeSelect.value) || '20', 10) || 20);
     const safePage = Math.max(1, parseInt(page, 10) || 1);
     const params = new URLSearchParams({
         page: String(safePage),
         page_size: String(pageSize)
     });
-    const keyword = document.getElementById('messageFilterKeyword')?.value?.trim();
+    const keyword = document.getElementById('messageFilterKeyword')?.(value && value.trim)();
     if (keyword) params.set('keyword', keyword);
 
     try {
         const result = await fetchJSON(`${apiBase}/api/message-filters?${params.toString()}`);
-        const records = Array.isArray(result?.data) ? result.data : [];
-        messageFilterState.page = Number(result?.page || safePage);
-        messageFilterState.pageSize = Number(result?.page_size || pageSize);
-        messageFilterState.total = Number(result?.total || 0);
+        const records = Array.isArray((result && result.data)) ? result.data : [];
+        messageFilterState.page = Number((result && result.page) || safePage);
+        messageFilterState.pageSize = Number((result && result.page_size) || pageSize);
+        messageFilterState.total = Number((result && result.total) || 0);
         renderMessageFilters(records);
         renderMessageFilterPagination();
     } catch (error) {
@@ -3498,11 +3498,11 @@ function getMessageFilterSourceLabel(source) {
 
 function getMessageFilterActionsHtml(record) {
     const actions = [];
-    if (record?.action_skip_auto_reply) actions.push('跳过自动回复');
-    if (record?.action_skip_ai_reply) actions.push('跳过AI');
-    const pauseMinutes = Number(record?.action_pause_minutes || 0);
+    if ((record && record.action_skip_auto_reply)) actions.push('跳过自动回复');
+    if ((record && record.action_skip_ai_reply)) actions.push('跳过AI');
+    const pauseMinutes = Number((record && record.action_pause_minutes) || 0);
     if (pauseMinutes > 0) actions.push(`暂停${pauseMinutes}分钟`);
-    if (record?.action_notify) actions.push('通知人工');
+    if ((record && record.action_notify)) actions.push('通知人工');
     if (actions.length === 0) return '<span class="text-muted small">仅记录</span>';
     return actions.map(action => `<span class="badge bg-light text-dark border me-1 mb-1">${escapeHtml(action)}</span>`).join('');
 }
@@ -3616,8 +3616,8 @@ function renderMessageFilterPagination() {
 }
 
 function getMessageFilterPayload() {
-    const name = document.getElementById('messageFilterName')?.value?.trim() || '';
-    const patterns = document.getElementById('messageFilterPatterns')?.value?.trim() || '';
+    const name = document.getElementById('messageFilterName')?.(value && value.trim)() || '';
+    const patterns = document.getElementById('messageFilterPatterns')?.(value && value.trim)() || '';
     if (!name) {
         showToast('请填写规则名称', 'warning');
         return null;
@@ -3629,8 +3629,8 @@ function getMessageFilterPayload() {
     const pauseMinutes = Math.max(0, parseInt(document.getElementById('messageFilterPauseMinutes')?.value || '0', 10) || 0);
     return {
         name,
-        cookie_id: document.getElementById('messageFilterCookieId')?.value?.trim() || null,
-        item_id: document.getElementById('messageFilterItemId')?.value?.trim() || null,
+        cookie_id: document.getElementById('messageFilterCookieId')?.(value && value.trim)() || null,
+        item_id: document.getElementById('messageFilterItemId')?.(value && value.trim)() || null,
         match_type: document.getElementById('messageFilterMatchType')?.value || 'contains',
         message_source: document.getElementById('messageFilterSource')?.value || 'user',
         patterns,
@@ -3658,7 +3658,7 @@ async function saveMessageFilterRule() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        showToast(result?.message || '消息过滤规则已保存', 'success');
+        showToast((result && result.message) || '消息过滤规则已保存', 'success');
         resetMessageFilterForm();
         await loadMessageFilters(editingId > 0 ? (messageFilterState.page || 1) : 1);
     } catch (error) {
@@ -3747,7 +3747,7 @@ async function deleteMessageFilter(ruleId) {
         const result = await fetchJSON(`${apiBase}/api/message-filters/${ruleId}`, {
             method: 'DELETE'
         });
-        showToast(result?.message || '消息过滤规则已删除', 'success');
+        showToast((result && result.message) || '消息过滤规则已删除', 'success');
         if (Number(messageFilterState.editingId || 0) === Number(ruleId || 0)) {
             resetMessageFilterForm();
         }
@@ -3808,24 +3808,24 @@ async function loadPersonalBlacklist(page = 1) {
     if (!tableBody) return;
 
     const pageSizeSelect = document.getElementById('blacklistPageSize');
-    const pageSize = Math.max(1, parseInt(pageSizeSelect?.value || '20', 10) || 20);
+    const pageSize = Math.max(1, parseInt((pageSizeSelect && pageSizeSelect.value) || '20', 10) || 20);
     const safePage = Math.max(1, parseInt(page, 10) || 1);
     const params = new URLSearchParams({
         page: String(safePage),
         page_size: String(pageSize)
     });
 
-    const buyerId = document.getElementById('blacklistFilterBuyerId')?.value?.trim();
-    const buyerNick = document.getElementById('blacklistFilterBuyerNick')?.value?.trim();
+    const buyerId = document.getElementById('blacklistFilterBuyerId')?.(value && value.trim)();
+    const buyerNick = document.getElementById('blacklistFilterBuyerNick')?.(value && value.trim)();
     if (buyerId) params.set('buyer_id', buyerId);
     if (buyerNick) params.set('buyer_nick', buyerNick);
 
     try {
         const result = await fetchJSON(`${apiBase}/api/blacklist/personal?${params.toString()}`);
-        const records = Array.isArray(result?.data) ? result.data : [];
-        blacklistState.page = Number(result?.page || safePage);
-        blacklistState.pageSize = Number(result?.page_size || pageSize);
-        blacklistState.total = Number(result?.total || 0);
+        const records = Array.isArray((result && result.data)) ? result.data : [];
+        blacklistState.page = Number((result && result.page) || safePage);
+        blacklistState.pageSize = Number((result && result.page_size) || pageSize);
+        blacklistState.total = Number((result && result.total) || 0);
         renderPersonalBlacklist(records);
         renderBlacklistPagination();
     } catch (error) {
@@ -3852,8 +3852,8 @@ function getBlacklistScopeBadge(scope) {
 }
 
 function getBlacklistTargetHtml(record) {
-    const cookieId = String(record?.cookie_id || '').trim();
-    const itemId = String(record?.item_id || '').trim();
+    const cookieId = String((record && record.cookie_id) || '').trim();
+    const itemId = String((record && record.item_id) || '').trim();
     const parts = [];
     parts.push(cookieId ? `账号 ${cookieId}` : '全部账号');
     if (itemId) parts.push(`商品 ${itemId}`);
@@ -3964,7 +3964,7 @@ function renderBlacklistPagination() {
 }
 
 async function createPersonalBlacklist() {
-    const buyerIds = document.getElementById('blacklistBuyerIds')?.value?.trim() || '';
+    const buyerIds = document.getElementById('blacklistBuyerIds')?.(value && value.trim)() || '';
     if (!buyerIds) {
         showToast('请填写买家ID', 'warning');
         return;
@@ -3972,10 +3972,10 @@ async function createPersonalBlacklist() {
 
     const payload = {
         buyer_ids: buyerIds,
-        cookie_id: document.getElementById('blacklistCookieId')?.value?.trim() || null,
-        item_id: document.getElementById('blacklistItemId')?.value?.trim() || null,
-        buyer_nick: document.getElementById('blacklistBuyerNick')?.value?.trim() || '',
-        reason: document.getElementById('blacklistReason')?.value?.trim() || '',
+        cookie_id: document.getElementById('blacklistCookieId')?.(value && value.trim)() || null,
+        item_id: document.getElementById('blacklistItemId')?.(value && value.trim)() || null,
+        buyer_nick: document.getElementById('blacklistBuyerNick')?.(value && value.trim)() || '',
+        reason: document.getElementById('blacklistReason')?.(value && value.trim)() || '',
         is_enabled: Boolean(document.getElementById('blacklistEnabled')?.checked)
     };
 
@@ -3985,7 +3985,7 @@ async function createPersonalBlacklist() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        showToast(result?.message || '黑名单已保存', 'success');
+        showToast((result && result.message) || '黑名单已保存', 'success');
         resetPersonalBlacklistForm();
         await loadPersonalBlacklist(1);
     } catch (error) {
@@ -4020,7 +4020,7 @@ async function deletePersonalBlacklist(recordId) {
         const result = await fetchJSON(`${apiBase}/api/blacklist/personal/${recordId}`, {
             method: 'DELETE'
         });
-        showToast(result?.message || '黑名单已删除', 'success');
+        showToast((result && result.message) || '黑名单已删除', 'success');
         await loadPersonalBlacklist(blacklistState.page || 1);
     } catch (error) {
         console.error('删除个人黑名单失败:', error);
@@ -4073,7 +4073,7 @@ async function batchDeletePersonalBlacklist() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ids: selectedIds })
         });
-        showToast(result?.message || '批量删除完成', 'success');
+        showToast((result && result.message) || '批量删除完成', 'success');
         await loadPersonalBlacklist(blacklistState.page || 1);
     } catch (error) {
         console.error('批量删除个人黑名单失败:', error);
@@ -4130,7 +4130,7 @@ async function exportPersonalBlacklist() {
 
 async function importPersonalBlacklistFile() {
     const input = document.getElementById('blacklistImportFile');
-    const file = input?.files?.[0];
+    const file = (input && input.files)?.[0];
     if (!file) return;
     if (!file.name.toLowerCase().endsWith('.xlsx')) {
         showToast('仅支持 .xlsx 文件', 'warning');
@@ -4145,7 +4145,7 @@ async function importPersonalBlacklistFile() {
             method: 'POST',
             body: formData
         });
-        showToast(result?.message || '黑名单导入完成', 'success');
+        showToast((result && result.message) || '黑名单导入完成', 'success');
         await loadPersonalBlacklist(1);
     } catch (error) {
         console.error('导入个人黑名单失败:', error);
@@ -4170,7 +4170,7 @@ function getAboutDiagnosticsElements() {
 }
 
 function getAboutSelectedAccountId() {
-    return document.getElementById('aboutDiagnosticsAccount')?.value?.trim() || '';
+    return document.getElementById('aboutDiagnosticsAccount')?.(value && value.trim)() || '';
 }
 
 function getAboutStatusText(type, value) {
@@ -4404,7 +4404,7 @@ function renderAboutHistoryPlaceholder(title, subtitle) {
 }
 
 function getAboutRuntimeOverview(runtimeStatus, readinessCount = 0) {
-    if (!runtimeStatus?.running) {
+    if (!(runtimeStatus && runtimeStatus.running)) {
         return {
             tone: 'danger',
             title: '实例未启动',
@@ -4412,7 +4412,7 @@ function getAboutRuntimeOverview(runtimeStatus, readinessCount = 0) {
         };
     }
 
-    if (runtimeStatus?.connection_state === 'connecting' || runtimeStatus?.connection_state === 'reconnecting') {
+    if ((runtimeStatus && runtimeStatus.connection_state) === 'connecting' || (runtimeStatus && runtimeStatus.connection_state) === 'reconnecting') {
         return {
             tone: 'info',
             title: '连接正在恢复',
@@ -4420,7 +4420,7 @@ function getAboutRuntimeOverview(runtimeStatus, readinessCount = 0) {
         };
     }
 
-    if (!runtimeStatus?.ws_ready || !runtimeStatus?.session_ready || !runtimeStatus?.has_current_token || !runtimeStatus?.message_stream_ready) {
+    if (!(runtimeStatus && runtimeStatus.ws_ready) || !(runtimeStatus && runtimeStatus.session_ready) || !(runtimeStatus && runtimeStatus.has_current_token) || !(runtimeStatus && runtimeStatus.message_stream_ready)) {
         return {
             tone: 'warning',
             title: `${readinessCount} / 4 关键链路已就绪`,
@@ -4564,11 +4564,11 @@ function getAboutHistoryMessageText(message) {
         return message;
     }
 
-    if (typeof message?.text?.text === 'string' && message.text.text.trim()) {
+    if (typeof (message && message.text)?.text === 'string' && message.text.text.trim()) {
         return message.text.text;
     }
 
-    if (typeof message?.raw === 'string' && message.raw.trim()) {
+    if (typeof (message && message.raw) === 'string' && message.raw.trim()) {
         return message.raw;
     }
 
@@ -4606,11 +4606,11 @@ function renderAboutConversationHistory(messages, meta = {}) {
         </div>
         <div class="about-history-items">
             ${messages.map((item, index) => {
-                const senderName = item?.send_user_name || '未知用户';
-                const senderId = item?.send_user_id || '-';
+                const senderName = (item && item.send_user_name) || '未知用户';
+                const senderId = (item && item.send_user_id) || '-';
                 const senderInitial = getAboutHistorySenderInitial(senderName);
-                const messageText = getAboutHistoryMessageText(item?.message);
-                const rawText = typeof item?.message === 'object'
+                const messageText = getAboutHistoryMessageText((item && item.message));
+                const rawText = typeof (item && item.message) === 'object'
                     ? (() => {
                         try {
                             return JSON.stringify(item.message, null, 2);
@@ -4664,7 +4664,7 @@ function populateAboutAccountOptions(accounts) {
     accountSelect.innerHTML = `
         <option value="">请选择账号</option>
         ${accounts.map(account => {
-            const runningSuffix = account.runtime_status?.running ? ' · 运行中' : '';
+            const runningSuffix = account.(runtime_status && runtime_status.running) ? ' · 运行中' : '';
             return `<option value="${escapeHtml(account.id)}">${escapeHtml(account.id + runningSuffix)}</option>`;
         }).join('')}
     `;
@@ -4680,11 +4680,11 @@ async function loadAboutRuntimeStatus(accountId = '') {
 
     const selectedAccount = aboutDiagnosticsAccounts.find(account => account.id === normalizedAccountId) || null;
     renderAboutAccountMeta(selectedAccount);
-    renderAboutRuntimeStatus(selectedAccount?.runtime_status || null);
+    renderAboutRuntimeStatus((selectedAccount && selectedAccount.runtime_status) || null);
 
     try {
         const result = await fetchJSON(`${apiBase}/cookies/${encodeURIComponent(normalizedAccountId)}/runtime-status`);
-        const runtimeStatus = result?.runtime_status || null;
+        const runtimeStatus = (result && result.runtime_status) || null;
         const targetAccount = aboutDiagnosticsAccounts.find(account => account.id === normalizedAccountId);
         if (targetAccount) {
             targetAccount.runtime_status = runtimeStatus;
@@ -4716,7 +4716,7 @@ async function loadAboutDiagnostics() {
 
         const nextAccountId = aboutDiagnosticsAccounts.some(account => account.id === previousAccountId)
             ? previousAccountId
-            : (aboutDiagnosticsAccounts.find(account => account.runtime_status?.running)?.id || aboutDiagnosticsAccounts[0]?.id || '');
+            : (aboutDiagnosticsAccounts.find(account => account.(runtime_status && runtime_status.running))?.id || aboutDiagnosticsAccounts[0]?.id || '');
 
         accountSelect.value = nextAccountId;
         await loadAboutRuntimeStatus(nextAccountId);
@@ -4733,7 +4733,7 @@ async function refreshAboutDiagnosticsStatus() {
         return;
     }
 
-    const originalHtml = refreshButton?.innerHTML;
+    const originalHtml = (refreshButton && refreshButton.innerHTML);
     if (refreshButton) {
         refreshButton.disabled = true;
         refreshButton.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>刷新中...';
@@ -4758,7 +4758,7 @@ async function triggerAboutSessionKeepalive() {
         return;
     }
 
-    const originalHtml = keepaliveButton?.innerHTML;
+    const originalHtml = (keepaliveButton && keepaliveButton.innerHTML);
     if (keepaliveButton) {
         keepaliveButton.disabled = true;
         keepaliveButton.innerHTML = '<i class="bi bi-lightning-charge-fill me-1"></i>执行中...';
@@ -4770,11 +4770,11 @@ async function triggerAboutSessionKeepalive() {
         });
         const targetAccount = aboutDiagnosticsAccounts.find(account => account.id === accountId);
         if (targetAccount) {
-            targetAccount.runtime_status = result?.runtime_status || null;
+            targetAccount.runtime_status = (result && result.runtime_status) || null;
             renderAboutAccountMeta(targetAccount);
         }
-        renderAboutRuntimeStatus(result?.runtime_status || null);
-        showToast(result?.message || '轻保活已执行', result?.success ? 'success' : 'warning');
+        renderAboutRuntimeStatus((result && result.runtime_status) || null);
+        showToast((result && result.message) || '轻保活已执行', (result && result.success) ? 'success' : 'warning');
     } catch (error) {
         console.error('执行轻保活失败:', error);
     } finally {
@@ -4788,7 +4788,7 @@ async function triggerAboutSessionKeepalive() {
 async function loadAboutConversationHistory() {
     const { historyButton, conversationInput } = getAboutDiagnosticsElements();
     const accountId = getAboutSelectedAccountId();
-    const conversationId = conversationInput?.value?.trim() || '';
+    const conversationId = (conversationInput && conversationInput.value)?.trim() || '';
 
     if (!accountId) {
         showToast('请先选择账号', 'warning');
@@ -4800,7 +4800,7 @@ async function loadAboutConversationHistory() {
         return;
     }
 
-    const originalHtml = historyButton?.innerHTML;
+    const originalHtml = (historyButton && historyButton.innerHTML);
     if (historyButton) {
         historyButton.disabled = true;
         historyButton.innerHTML = '<i class="bi bi-chat-left-text-fill me-1"></i>查询中...';
@@ -4812,13 +4812,13 @@ async function loadAboutConversationHistory() {
         const result = await fetchJSON(
             `${apiBase}/cookies/${encodeURIComponent(accountId)}/conversations/${encodeURIComponent(conversationId)}/history`
         );
-        renderAboutConversationHistory(result?.messages || [], {
-            conversationId: result?.conversation_id || conversationId,
+        renderAboutConversationHistory((result && result.messages) || [], {
+            conversationId: (result && result.conversation_id) || conversationId,
         });
         showToast(`账号 "${accountId}" 历史消息查询完成`, 'success');
     } catch (error) {
         console.error('查询历史消息失败:', error);
-        renderAboutHistoryPlaceholder('历史消息查询失败', error?.message || '请稍后重试。');
+        renderAboutHistoryPlaceholder('历史消息查询失败', (error && error.message) || '请稍后重试。');
     } finally {
         if (historyButton) {
             historyButton.disabled = false;
@@ -4840,15 +4840,15 @@ function initAboutDiagnosticsEvents() {
         conversationInput,
     } = getAboutDiagnosticsElements();
 
-    accountSelect?.addEventListener('change', async () => {
+    (accountSelect && accountSelect.addEventListener)('change', async () => {
         renderAboutHistoryPlaceholder('暂无历史消息', '切换账号后，请重新输入会话 ID 并查询历史消息。');
         await loadAboutRuntimeStatus(accountSelect.value);
     });
 
-    refreshButton?.addEventListener('click', refreshAboutDiagnosticsStatus);
-    keepaliveButton?.addEventListener('click', triggerAboutSessionKeepalive);
-    historyButton?.addEventListener('click', loadAboutConversationHistory);
-    conversationInput?.addEventListener('keydown', (event) => {
+    (refreshButton && refreshButton.addEventListener)('click', refreshAboutDiagnosticsStatus);
+    (keepaliveButton && keepaliveButton.addEventListener)('click', triggerAboutSessionKeepalive);
+    (historyButton && historyButton.addEventListener)('click', loadAboutConversationHistory);
+    (conversationInput && conversationInput.addEventListener)('keydown', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
             loadAboutConversationHistory();
@@ -5097,7 +5097,7 @@ async function loadCookies() {
         element.style.cursor = 'pointer';
         element.addEventListener('click', function() {
         const row = this.closest('tr');
-        const cookieId = row?.querySelector('.cookie-id strong')?.textContent;
+        const cookieId = (row && row.querySelector)('.cookie-id strong')?.textContent;
         if (cookieId) {
             copyCookie(cookieId);
         }
@@ -5122,7 +5122,7 @@ async function loadCookies() {
 async function copyCookie(id) {
     try {
     const details = await fetchJSON(`${apiBase}/cookie/${encodeURIComponent(id)}/details?include_secrets=true`);
-    const value = details?.value || '';
+    const value = (details && details.value) || '';
 
     if (!value || value === '未设置') {
         showToast('该账号暂无Cookie值', 'warning');
@@ -5637,7 +5637,7 @@ function updateAccountRowStatus(accountId, enabled, statusNote = '') {
     <i class="bi bi-${enabled ? 'check-circle-fill' : 'x-circle-fill'}"></i>
     `;
 
-    const existingStatusNote = statusCell?.querySelector('.account-status-note-badge');
+    const existingStatusNote = (statusCell && statusCell.querySelector)('.account-status-note-badge');
     const renderedStatusNote = renderStatusNoteBadge(statusNote, 'account-status-note-badge').trim();
     if (existingStatusNote) {
         existingStatusNote.remove();
@@ -5923,7 +5923,7 @@ async function runAutoRedFlowerForAccount(accountId) {
             showToast(data.detail || data.message || '求小红花执行失败', 'danger');
             return;
         }
-        const stats = data?.data?.stats || {};
+        const stats = (data && data.data)?.stats || {};
         showToast(
             `求小红花完成：处理 ${stats.orders || 0} 单，成功 ${stats.success || 0}，失败 ${stats.failed || 0}，跳过 ${stats.skipped || 0}`,
             (stats.failed || 0) > 0 ? 'warning' : 'success'
@@ -11301,7 +11301,7 @@ function updateItemPublishMaterialModeBadge() {
 }
 
 function getItemPublishImageSrc(image) {
-    const raw = String(image?.url || image?.image_url || image?.src || image?.data || image?.base64 || '').trim();
+    const raw = String((image && image.url) || (image && image.image_url) || (image && image.src) || (image && image.data) || (image && image.base64) || '').trim();
     if (!raw) {
         return '';
     }
@@ -11324,7 +11324,7 @@ function renderItemPublishStoredImagePreviews(images) {
     }
     previewContainer.innerHTML = safeImages.map((image, index) => {
         const src = getItemPublishImageSrc(image);
-        const name = image?.filename || image?.name || `素材图片 ${index + 1}`;
+        const name = (image && image.filename) || (image && image.name) || `素材图片 ${index + 1}`;
         return `
             <div class="item-publish-preview-card">
                 <img src="${escapeHtml(src)}" alt="${escapeHtml(name)}">
@@ -11356,7 +11356,7 @@ async function saveItemPublishMaterial() {
         return;
     }
     const button = document.getElementById('itemPublishSaveMaterialBtn');
-    const originalHtml = button?.innerHTML || '';
+    const originalHtml = (button && button.innerHTML) || '';
 
     try {
         const values = getItemPublishFormValues();
@@ -16796,12 +16796,12 @@ async function refreshOrders() {
 }
 
 function getOrderPrimarySortTime(order) {
-    const platformCreatedAt = String(order?.platform_created_at || '').trim();
+    const platformCreatedAt = String((order && order.platform_created_at) || '').trim();
     if (platformCreatedAt) {
         return platformCreatedAt;
     }
 
-    const createdAt = String(order?.created_at || '').trim();
+    const createdAt = String((order && order.created_at) || '').trim();
     return createdAt || null;
 }
 
@@ -16830,8 +16830,8 @@ async function fetchOrderSyncAccounts(forceRefresh = false) {
 }
 
 function formatOrderAccountLabel(account) {
-    const accountId = String(account?.id || '').trim();
-    const remark = String(account?.remark || '').trim();
+    const accountId = String((account && account.id) || '').trim();
+    const remark = String((account && account.remark) || '').trim();
     if (remark) {
         return `${remark} (${accountId})`;
     }
@@ -16850,7 +16850,7 @@ function renderOrderAccountOptions(select, accounts, options = {}) {
     select.innerHTML = includeAllOption ? `<option value="">${allOptionLabel}</option>` : '';
 
     (accounts || []).forEach(account => {
-        const accountId = String(account?.id || '').trim();
+        const accountId = String((account && account.id) || '').trim();
         if (!accountId) return;
 
         const option = document.createElement('option');
@@ -16926,7 +16926,7 @@ function scheduleOrderHistorySyncPolling(jobId) {
 }
 
 function getOrderHistorySyncStatusMeta(job) {
-    const status = String(job?.status || '').toLowerCase();
+    const status = String((job && job.status) || '').toLowerCase();
     const statusMap = {
         idle: { label: '待命', badgeClass: 'bg-secondary text-white', progressClass: 'bg-secondary', title: '未开始' },
         pending: { label: '排队中', badgeClass: 'bg-secondary text-white', progressClass: 'bg-secondary', title: '等待执行' },
@@ -16940,16 +16940,16 @@ function getOrderHistorySyncStatusMeta(job) {
 
 function renderOrderHistorySyncJob(job) {
     const statusMeta = getOrderHistorySyncStatusMeta(job);
-    const request = job?.request || {};
-    const accountsTotal = Number(job?.accounts_total || 0);
-    const accountsCompleted = Number(job?.accounts_completed || 0);
-    const ordersDiscovered = Number(job?.orders_discovered || 0);
-    const matchedOrders = Number(job?.matched_orders || 0);
-    const ordersSaved = Number(job?.orders_saved || 0);
-    const ordersFailed = Number(job?.orders_failed || 0);
-    const ordersProcessed = Number(job?.orders_processed || 0);
-    const ordersSkipped = Number(job?.orders_skipped || 0);
-    const warnings = Array.isArray(job?.warnings) ? job.warnings : [];
+    const request = (job && job.request) || {};
+    const accountsTotal = Number((job && job.accounts_total) || 0);
+    const accountsCompleted = Number((job && job.accounts_completed) || 0);
+    const ordersDiscovered = Number((job && job.orders_discovered) || 0);
+    const matchedOrders = Number((job && job.matched_orders) || 0);
+    const ordersSaved = Number((job && job.orders_saved) || 0);
+    const ordersFailed = Number((job && job.orders_failed) || 0);
+    const ordersProcessed = Number((job && job.orders_processed) || 0);
+    const ordersSkipped = Number((job && job.orders_skipped) || 0);
+    const warnings = Array.isArray((job && job.warnings)) ? job.warnings : [];
 
     const statusText = document.getElementById('orderHistorySyncStatusText');
     const messageText = document.getElementById('orderHistorySyncMessageText');
@@ -16989,7 +16989,7 @@ function renderOrderHistorySyncJob(job) {
         statusText.textContent = statusMeta.title;
     }
     if (messageText) {
-        messageText.textContent = job?.message || '选择账号和日期范围后即可开始同步。';
+        messageText.textContent = (job && job.message) || '选择账号和日期范围后即可开始同步。';
     }
     if (statusBadge) {
         statusBadge.className = `badge ${statusMeta.badgeClass}`;
@@ -16997,7 +16997,7 @@ function renderOrderHistorySyncJob(job) {
     }
 
     let progressPercent = 0;
-    const status = String(job?.status || '').toLowerCase();
+    const status = String((job && job.status) || '').toLowerCase();
     if (status === 'completed' || status === 'failed' || status === 'cancelled') {
         progressPercent = 100;
     } else if (accountsTotal > 0) {
@@ -17034,18 +17034,18 @@ function renderOrderHistorySyncJob(job) {
     ].filter(Boolean);
     const metaParts = [
         requestParts.join(' · '),
-        job?.started_at ? `开始于 ${job.started_at}` : '',
-        job?.finished_at ? `结束于 ${job.finished_at}` : '',
+        (job && job.started_at) ? `开始于 ${job.started_at}` : '',
+        (job && job.finished_at) ? `结束于 ${job.finished_at}` : '',
     ].filter(Boolean);
     if (metaText) {
         metaText.textContent = metaParts.join(' · ') || '尚未开始任务';
     }
 
     const currentParts = [];
-    if (job?.current_account) {
+    if ((job && job.current_account)) {
         currentParts.push(`当前账号: ${job.current_account}`);
     }
-    if (job?.current_order_id) {
+    if ((job && job.current_order_id)) {
         currentParts.push(`当前订单: ${job.current_order_id}`);
     }
     if (ordersProcessed > 0 || ordersSkipped > 0) {
@@ -17218,7 +17218,7 @@ async function fetchOrderHistorySyncStatus(jobId, options = {}) {
     activeOrderHistorySyncJobId = job.job_id || activeOrderHistorySyncJobId;
     renderOrderHistorySyncJob(job);
 
-    const status = String(job?.status || '').toLowerCase();
+    const status = String((job && job.status) || '').toLowerCase();
     if (status === 'pending' || status === 'running') {
         scheduleOrderHistorySyncPolling(job.job_id);
     } else {
@@ -19089,7 +19089,7 @@ let currentRiskSliderStatsRequestId = 0;
 
 function getRiskSliderStatsRange() {
     const activeButton = document.querySelector('#riskSliderRangeFilter .risk-slider-range-btn.is-active');
-    return activeButton?.dataset.range || 'all';
+    return (activeButton && activeButton.dataset).range || 'all';
 }
 
 function getRiskSliderStatsRangeLabel(rangeValue = 'all') {
@@ -20278,7 +20278,7 @@ function setIgnoredHotUpdateVersion(version) {
 }
 
 function getHotUpdateTargetVersion(updateInfo = remoteVersionInfo) {
-    return updateInfo?.new_version || (updateInfo?.has_update ? updateInfo?.version : '') || '';
+    return (updateInfo && updateInfo.new_version) || ((updateInfo && updateInfo.has_update) ? (updateInfo && updateInfo.version) : '') || '';
 }
 
 function shouldSuppressHotUpdateHint(updateInfo = remoteVersionInfo) {
@@ -21800,11 +21800,11 @@ async function showVersionInfo(version) {
     const versionInfo = await getUpdateInfo();
     
     // 构建项目介绍
-    const intro = versionInfo?.intro || '此版本为本人利用业余时间开发，功能可能不完善，欢迎大家提出建议和bug，我会尽快修复。此版本纯粹免费，没有任何收费项目，请大家放心使用。如果大家觉得这个项目对你有帮助，可以请我喝杯咖啡，支持我继续开发。';
+    const intro = (versionInfo && versionInfo.intro) || '此版本为本人利用业余时间开发，功能可能不完善，欢迎大家提出建议和bug，我会尽快修复。此版本纯粹免费，没有任何收费项目，请大家放心使用。如果大家觉得这个项目对你有帮助，可以请我喝杯咖啡，支持我继续开发。';
     
     // 构建版本历史
     let versionHistoryHtml = '';
-    if (versionInfo?.versionHistory && versionInfo.versionHistory.length > 0) {
+    if ((versionInfo && versionInfo.versionHistory) && versionInfo.versionHistory.length > 0) {
         versionHistoryHtml = versionInfo.versionHistory.map((item, index) => {
             const isLatest = index === 0;
             const bgClass = isLatest ? 'background: linear-gradient(135deg, #e8f5e9, #c8e6c9);' : 'background: #f8f9fa;';
@@ -22018,8 +22018,8 @@ async function performHotUpdate() {
         if (result.success && result.data.success) {
             // 更新成功
             const updateData = result.data;
-            const updatedCount = updateData.updated_files?.length || 0;
-            const deletedCount = updateData.deleted_files?.length || 0;
+            const updatedCount = updateData.(updated_files && updated_files.length) || 0;
+            const deletedCount = updateData.(deleted_files && deleted_files.length) || 0;
             
             if (updateData.needs_restart) {
                 // 需要重启
@@ -22034,7 +22034,7 @@ async function performHotUpdate() {
                 }, 3000);
             }
         } else {
-            showToast('更新失败: ' + (result.detail || result.message || result.data?.message || '未知错误'), 'danger');
+            showToast('更新失败: ' + (result.detail || result.message || result.(data && data.message) || '未知错误'), 'danger');
         }
         
     } catch (error) {
@@ -22415,16 +22415,16 @@ function normalizeChatSessionPreview(content, contentType) {
 }
 
 function resolveSessionDisplayName(session) {
-    return session?.fish_nick
-        || session?.buyer_name_resolved
-        || session?.buyer_name
-        || (session?.direction === 2 ? (session?.sender_name || session?.sender_id || session?.chat_id) : (session?.sender_name || session?.chat_id))
-        || session?.chat_id
+    return (session && session.fish_nick)
+        || (session && session.buyer_name_resolved)
+        || (session && session.buyer_name)
+        || ((session && session.direction) === 2 ? ((session && session.sender_name) || (session && session.sender_id) || (session && session.chat_id)) : ((session && session.sender_name) || (session && session.chat_id)))
+        || (session && session.chat_id)
         || '-';
 }
 
 function resolveSessionAvatar(session) {
-    if (session?.avatar) {
+    if ((session && session.avatar)) {
         return { type: 'image', value: session.avatar };
     }
     const displayName = resolveSessionDisplayName(session);
@@ -22475,7 +22475,7 @@ function applyCachedChatUserInfosToSessions() {
     if (!chatCurrentCookieId || !chatSessionsCache.length) return false;
     let changed = false;
     chatSessionsCache = chatSessionsCache.map(session => {
-        const cacheKey = buildChatUserInfoCacheKey(chatCurrentCookieId, session?.chat_id);
+        const cacheKey = buildChatUserInfoCacheKey(chatCurrentCookieId, (session && session.chat_id));
         const cached = chatUserInfoCache[cacheKey];
         if (!cached || cached.__miss) return session;
         const result = applyChatUserInfoToSession(session, cached);
@@ -22486,10 +22486,10 @@ function applyCachedChatUserInfosToSessions() {
 }
 
 function shouldHydrateChatSessionUserInfo(session) {
-    if (!chatCurrentCookieId || !session?.chat_id) return false;
+    if (!chatCurrentCookieId || !(session && session.chat_id)) return false;
     const cacheKey = buildChatUserInfoCacheKey(chatCurrentCookieId, session.chat_id);
     const cached = chatUserInfoCache[cacheKey];
-    if (cached?.__miss && Date.now() - Number(cached.cachedAt || 0) < CHAT_USER_INFO_MISS_TTL_MS) return false;
+    if ((cached && cached.__miss) && Date.now() - Number(cached.cachedAt || 0) < CHAT_USER_INFO_MISS_TTL_MS) return false;
 
     const displayName = resolveSessionDisplayName(session);
     return !session.avatar || !isValidChatDisplayName(displayName);
@@ -22585,7 +22585,7 @@ async function refreshChatBlacklistStatus() {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const result = await response.json();
         if (cookieId !== chatCurrentCookieId || buyerId !== chatCurrentToUserId) return;
-        const data = result?.data || {};
+        const data = (result && result.data) || {};
         chatBlacklistState = {
             loading: false,
             blacklisted: Boolean(data.blacklisted),
@@ -22633,7 +22633,7 @@ async function toggleChatBlacklist() {
                 reason: '在线客服手动拉黑',
             }),
         });
-        const data = result?.data || {};
+        const data = (result && result.data) || {};
         chatBlacklistState = {
             loading: false,
             blacklisted: Boolean(data.blacklisted),
@@ -22665,7 +22665,7 @@ function applyChatUserInfosToSessions(users) {
     if (!users || typeof users !== 'object') return false;
     let changed = false;
     chatSessionsCache = chatSessionsCache.map(session => {
-        const chatId = String(session?.chat_id || '').trim().replace(/@goofish$/i, '');
+        const chatId = String((session && session.chat_id) || '').trim().replace(/@goofish$/i, '');
         const info = users[chatId];
         if (!info) return session;
         const result = applyChatUserInfoToSession(session, info);
@@ -22698,7 +22698,7 @@ async function hydrateChatUserInfos(sessions) {
     const seen = new Set();
     const queries = [];
     for (const session of sessions) {
-        const chatId = String(session?.chat_id || '').trim().replace(/@goofish$/i, '');
+        const chatId = String((session && session.chat_id) || '').trim().replace(/@goofish$/i, '');
         if (!chatId || seen.has(chatId) || !shouldHydrateChatSessionUserInfo(session)) continue;
         seen.add(chatId);
         queries.push({
@@ -22732,7 +22732,7 @@ async function hydrateChatUserInfos(sessions) {
         }
         if (!response.ok) return;
         const result = await response.json();
-        const users = result?.users || {};
+        const users = (result && result.users) || {};
         const now = Date.now();
 
         queries.forEach(query => {
@@ -22751,7 +22751,7 @@ async function hydrateChatUserInfos(sessions) {
 }
 
 function resolveSessionMessagePreview(session) {
-    const messagePreview = normalizeChatSessionPreview(session?.content, session?.content_type);
+    const messagePreview = normalizeChatSessionPreview((session && session.content), (session && session.content_type));
     if (messagePreview && messagePreview !== '[系统/占位消息]' && messagePreview !== '[暂无文本内容]') {
         return messagePreview;
     }
@@ -22760,15 +22760,15 @@ function resolveSessionMessagePreview(session) {
 
 function resolveSessionPreview(session) {
     return resolveSessionMessagePreview(session)
-        || session?.order_status_name
-        || session?.item_title
+        || (session && session.order_status_name)
+        || (session && session.item_title)
         || '[暂无文本内容]';
 }
 
 function resolveSessionSubMeta(session) {
     const preview = resolveSessionPreview(session);
     const parts = [];
-    [session?.item_title, session?.order_status_name, session?.item_tips].forEach(value => {
+    [(session && session.item_title), (session && session.order_status_name), (session && session.item_tips)].forEach(value => {
         const text = String(value || '').trim();
         if (text && text !== preview && !parts.includes(text)) {
             parts.push(text);
@@ -22790,30 +22790,30 @@ function updateChatHeaderMeta(session) {
     const headerItemId = document.getElementById('chatHeaderItemId');
     const headerMeta = document.getElementById('chatHeaderMeta');
     if (headerItemId) {
-        headerItemId.textContent = session?.item_id ? `商品: ${session.item_id}` : '';
+        headerItemId.textContent = (session && session.item_id) ? `商品: ${session.item_id}` : '';
     }
     if (!headerMeta) return;
     const parts = [];
-    if (session?.item_title) parts.push(session.item_title);
-    if (session?.item_price) parts.push(`￥${session.item_price}`);
-    if (session?.order_status_name) parts.push(session.order_status_name);
-    if (session?.item_tips) parts.push(session.item_tips);
+    if ((session && session.item_title)) parts.push(session.item_title);
+    if ((session && session.item_price)) parts.push(`￥${session.item_price}`);
+    if ((session && session.order_status_name)) parts.push(session.order_status_name);
+    if ((session && session.item_tips)) parts.push(session.item_tips);
     headerMeta.textContent = parts.join(' · ');
 }
 
 function scoreChatSession(session) {
-    const preview = normalizeChatSessionPreview(session?.content, session?.content_type);
+    const preview = normalizeChatSessionPreview((session && session.content), (session && session.content_type));
     let score = 0;
     if (preview !== '[系统/占位消息]' && preview !== '[暂无文本内容]') score += 20;
-    if (String(session?.buyer_name || '').trim()) score += 8;
-    if (String(session?.item_id || '').trim()) score += 4;
-    if (String(session?.created_at || '').trim()) score += 2;
+    if (String((session && session.buyer_name) || '').trim()) score += 8;
+    if (String((session && session.item_id) || '').trim()) score += 4;
+    if (String((session && session.created_at) || '').trim()) score += 2;
     return score;
 }
 
 function sortChatSessions(sessions) {
     return [...(sessions || [])].sort((a, b) => {
-        const timeDiff = String(b?.created_at || b?.lastMessageTime || '').localeCompare(String(a?.created_at || a?.lastMessageTime || ''));
+        const timeDiff = String((b && b.created_at) || (b && b.lastMessageTime) || '').localeCompare(String((a && a.created_at) || (a && a.lastMessageTime) || ''));
         if (timeDiff !== 0) return timeDiff;
         return scoreChatSession(b) - scoreChatSession(a);
     });
@@ -22823,7 +22823,7 @@ function mergeChatSessionLists(primarySessions, secondarySessions) {
     const merged = [];
     const seen = new Set();
     [...(primarySessions || []), ...(secondarySessions || [])].forEach(session => {
-        const chatId = String(session?.chat_id || '').trim();
+        const chatId = String((session && session.chat_id) || '').trim();
         if (!chatId || seen.has(chatId)) return;
         seen.add(chatId);
         merged.push(session);
@@ -22832,11 +22832,11 @@ function mergeChatSessionLists(primarySessions, secondarySessions) {
 }
 
 function getChatAccountStatus(account) {
-    const state = account?.connection_state || 'not_running';
-    if (!account?.enabled) return { label: '已断开', className: 'offline' };
-    if (account?.connected) return { label: '已连接', className: 'online' };
+    const state = (account && account.connection_state) || 'not_running';
+    if (!(account && account.enabled)) return { label: '已断开', className: 'offline' };
+    if ((account && account.connected)) return { label: '已连接', className: 'online' };
     if (state === 'connecting' || state === 'reconnecting') return { label: '连接中', className: 'pending' };
-    if (account?.running) return { label: '运行中', className: 'pending' };
+    if ((account && account.running)) return { label: '运行中', className: 'pending' };
     return { label: '未连接', className: 'offline' };
 }
 
@@ -23015,7 +23015,7 @@ async function enrichSessionsWithOrdersFallback(existingSessions) {
     }
     try {
         const ordersResult = await fetchJSON(`${apiBase}/api/orders`);
-        const orderSessions = buildChatSessionsFromOrdersData(ordersResult?.data || [], chatCurrentCookieId);
+        const orderSessions = buildChatSessionsFromOrdersData((ordersResult && ordersResult.data) || [], chatCurrentCookieId);
         return mergeChatSessionLists(sessions, orderSessions);
     } catch (error) {
         console.debug('从订单补充会话列表失败:', error);
@@ -23073,7 +23073,7 @@ function mergeHydrationFallbackSessions() {
     if (!chatCurrentCookieId) return;
     fetchJSON(`${apiBase}/api/chat/sessions?cookie_id=${encodeURIComponent(chatCurrentCookieId)}&include_order_fallback=true&limit=120`)
         .then(result => {
-            if (!result?.success || !Array.isArray(result.sessions)) return;
+            if (!(result && result.success) || !Array.isArray(result.sessions)) return;
             const mergedSessions = mergeChatSessionLists(chatSessionsCache, result.sessions);
             if (mergedSessions.length !== chatSessionsCache.length) {
                 chatSessionsCache = mergedSessions;
@@ -23117,7 +23117,7 @@ function filterChatSessions() {
 }
 
 async function selectChatSession(session) {
-    session = { ...session, content: normalizeChatSessionPreview(session?.content, session?.content_type) };
+    session = { ...session, content: normalizeChatSessionPreview((session && session.content), (session && session.content_type)) };
     chatCurrentChatId = session.chat_id;
     chatCurrentToUserId = session.buyer_id || session.sender_id || '';
     chatCurrentSenderName = resolveSessionDisplayName(session);
@@ -23163,7 +23163,7 @@ function shouldRebuildEmptySession(messages) {
 }
 
 function renderChatEmptyState(session, hint = '暂无消息记录') {
-    const title = session?.source === 'remote_im' ? hint : (hint || '暂无消息记录');
+    const title = (session && session.source) === 'remote_im' ? hint : (hint || '暂无消息记录');
     return `<div class="text-center text-muted py-4"><div class="small">${escapeHtml(title)}</div></div>`;
 }
 
@@ -23276,7 +23276,7 @@ function renderChatMessages(messages) {
                 return null;
             }
         })();
-        const itemShare = extra?.item_share || null;
+        const itemShare = (extra && extra.item_share) || null;
         if (message.content_type === 2 && message.image_url) {
             contentHtml = `<img src="${escapeHtml(message.image_url)}" class="chat-msg-image" onclick="window.open(this.src, '_blank')">`;
             if (message.content && message.content !== '[图片]') {
@@ -23287,16 +23287,16 @@ function renderChatMessages(messages) {
             const link = message.media_url ? `<a href="${escapeHtml(message.media_url)}" target="_blank" rel="noopener noreferrer" class="chat-rich-link">打开视频</a>` : '';
             contentHtml = `<div class="chat-rich-card">${poster}<div class="chat-rich-title">${escapeHtml(message.content || '[视频]')}</div>${link}</div>`;
         } else if (message.content_type === 4) {
-            const linkTarget = message.link_url || extra?.payload?.targetUrl || '#';
+            const linkTarget = message.link_url || (extra && extra.payload)?.targetUrl || '#';
             contentHtml = `<div class="chat-rich-card"><div class="chat-rich-title">${escapeHtml(message.content || '[链接]')}</div><a href="${escapeHtml(linkTarget)}" target="_blank" rel="noopener noreferrer" class="chat-rich-link">打开链接</a></div>`;
         } else if (message.content_type === 5) {
             const linkTarget = message.link_url || '#';
-            const image = itemShare?.image_url || message.image_url;
-            contentHtml = `<div class="chat-rich-card chat-item-share-card">${image ? `<img src="${escapeHtml(image)}" class="chat-msg-image mb-2" onclick="window.open('${escapeHtml(linkTarget === '#' ? image : linkTarget)}', '_blank')">` : ''}<div class="chat-rich-title">${escapeHtml(itemShare?.title || message.content || '[商品分享]')}</div>${itemShare?.item_id ? `<div class="chat-rich-subtitle">商品ID: ${escapeHtml(String(itemShare.item_id))}</div>` : ''}${linkTarget && linkTarget !== '#' ? `<a href="${escapeHtml(linkTarget)}" target="_blank" rel="noopener noreferrer" class="chat-rich-link">查看商品</a>` : ''}</div>`;
+            const image = (itemShare && itemShare.image_url) || message.image_url;
+            contentHtml = `<div class="chat-rich-card chat-item-share-card">${image ? `<img src="${escapeHtml(image)}" class="chat-msg-image mb-2" onclick="window.open('${escapeHtml(linkTarget === '#' ? image : linkTarget)}', '_blank')">` : ''}<div class="chat-rich-title">${escapeHtml((itemShare && itemShare.title) || message.content || '[商品分享]')}</div>${(itemShare && itemShare.item_id) ? `<div class="chat-rich-subtitle">商品ID: ${escapeHtml(String(itemShare.item_id))}</div>` : ''}${linkTarget && linkTarget !== '#' ? `<a href="${escapeHtml(linkTarget)}" target="_blank" rel="noopener noreferrer" class="chat-rich-link">查看商品</a>` : ''}</div>`;
         } else if (message.content_type === 6) {
-            const buttonText = extra?.button_text;
+            const buttonText = (extra && extra.button_text);
             const linkTarget = message.link_url || '#';
-            contentHtml = `<div class="chat-rich-card"><div class="chat-rich-title">${escapeHtml(extra?.title || message.content || '[系统卡片]')}</div>${buttonText ? `<div class="chat-rich-subtitle">${escapeHtml(buttonText)}</div>` : ''}${linkTarget && linkTarget !== '#' ? `<a href="${escapeHtml(linkTarget)}" target="_blank" rel="noopener noreferrer" class="chat-rich-link">打开卡片</a>` : ''}</div>`;
+            contentHtml = `<div class="chat-rich-card"><div class="chat-rich-title">${escapeHtml((extra && extra.title) || message.content || '[系统卡片]')}</div>${buttonText ? `<div class="chat-rich-subtitle">${escapeHtml(buttonText)}</div>` : ''}${linkTarget && linkTarget !== '#' ? `<a href="${escapeHtml(linkTarget)}" target="_blank" rel="noopener noreferrer" class="chat-rich-link">打开卡片</a>` : ''}</div>`;
         } else {
             const normalizedContent = String(message.content || '').trim() || '[空消息]';
             contentHtml = escapeHtml(normalizedContent).replace(/\n/g, '<br>');
@@ -23309,7 +23309,7 @@ function renderChatMessages(messages) {
 
 async function sendChatMessage() {
     const input = document.getElementById('chatInputBox');
-    const message = String(input?.value || '').trim();
+    const message = String((input && input.value) || '').trim();
     if (!message) return;
     if (!chatCurrentCookieId || !chatCurrentChatId || !chatCurrentToUserId) {
         showToast('无法发送：缺少会话信息', 'warning');
@@ -23793,14 +23793,14 @@ async function openPolishScheduleModal(accountId) {
     try {
         const tasks = await loadScheduledTasks();
         const task = getPolishScheduledTask(tasks, accountId);
-        const runHour = Number.isFinite(Number(task?.delay_minutes)) ? Number(task.delay_minutes) : 8;
+        const runHour = Number.isFinite(Number((task && task.delay_minutes))) ? Number(task.delay_minutes) : 8;
         const enabled = task ? Boolean(task.enabled) : true;
         const hourOptions = Array.from({ length: 24 }, (_, hour) => `
             <option value="${hour}" ${hour === runHour ? 'selected' : ''}>${formatPolishScheduleHour(hour)}</option>
         `).join('');
         const statusText = task ? (task.enabled ? '已开启' : '未开启') : '保存后启用';
         const nextRunText = task ? (task.enabled ? (task.next_run_at || '保存后生成') : '已关闭') : '保存后生成';
-        const lastRunText = task?.last_run_at || '暂无记录';
+        const lastRunText = (task && task.last_run_at) || '暂无记录';
 
         const existingModal = document.getElementById('polishScheduleModal');
         if (existingModal) {

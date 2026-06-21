@@ -846,3 +846,23 @@
   margin-left: 8px;
   font-size: 0.7rem;
 }
+
+/* mobile-modal-fix */
+@media (max-width: 768px) {
+    .modal-xl, .modal-lg { max-width: calc(100vw - 1rem) !important; }
+    .modal-content { border-radius: 0.75rem; }
+    .modal-header { padding: 0.75rem 1rem; }
+    .modal-footer { padding: 0.5rem 1rem; }
+    .modal iframe { width: 100% !important; max-height: 70vh !important; }
+}
+
+/* mobile-touch-targets */
+@media (max-width: 768px) {
+    .btn { min-height: 44px; }
+    .nav-link { min-height: 44px; display: flex; align-items: center; }
+    .form-control { min-height: 44px; font-size: 16px; } /* 16px 防止 iOS 缩放 */
+    .form-select { min-height: 44px; font-size: 16px; }
+    .input-group-text { min-height: 44px; }
+    .dropdown-item { min-height: 44px; display: flex; align-items: center; }
+    .badge { padding: 0.4em 0.6em; }
+}

@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>闲鱼管理系统</title>
   <link rel="icon" type="image/png" href="/static/favicon.png">
   <!-- 防止主题闪烁：先隐藏页面，设置好主题后再显示 -->
@@ -51,7 +51,7 @@
   <link rel="stylesheet" href="/static/lib/bootstrap-icons/bootstrap-icons.css">
 
   <link rel="stylesheet" href="/static/css/app.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/static/lib/chart.min.js"></script>
 </head>
 <body>
   <!-- 移动端菜单切换按钮 -->
@@ -5801,5 +5801,24 @@
     </div>
   </div>
 
+
+    <!-- 移动端底部 Tab Bar -->
+    <nav class="mobile-tabbar" id="mobileTabbar">
+        <button class="tabbar-item active" onclick="showSection('dashboard')" data-section="dashboard">
+            <i class="bi bi-house-door"></i><span>首页</span>
+        </button>
+        <button class="tabbar-item" onclick="showSection('accounts')" data-section="accounts">
+            <i class="bi bi-person"></i><span>账号</span>
+        </button>
+        <button class="tabbar-item" onclick="showSection('online-im')" data-section="online-im">
+            <i class="bi bi-chat-dots"></i><span>消息</span>
+        </button>
+        <button class="tabbar-item" onclick="showSection('orders')" data-section="orders">
+            <i class="bi bi-receipt"></i><span>订单</span>
+        </button>
+        <button class="tabbar-item" onclick="showSection('system-settings')" data-section="system-settings">
+            <i class="bi bi-gear"></i><span>我的</span>
+        </button>
+    </nav>
 </body>
 </html>

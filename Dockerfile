@@ -65,7 +65,6 @@ RUN apt-get -o Acquire::Retries=5 update && \
         libxft2 \
         libxinerama1 \
         libxtst6 \
-        libappindicator3-1 \
         libx11-xcb1 \
         libxfixes3 \
         xdg-utils \

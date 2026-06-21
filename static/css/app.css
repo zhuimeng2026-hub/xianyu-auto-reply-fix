@@ -10,4 +10,13 @@
 @import url('about.css');
 @import url('admin.css');
 
-
+/* 页面切换动画 */
+@media (max-width: 768px) {
+    .content-section.active {
+        animation: sectionFadeIn 0.25s ease-out;
+    }
+    @keyframes sectionFadeIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+}
