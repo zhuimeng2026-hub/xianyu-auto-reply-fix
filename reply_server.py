@@ -6,6 +6,15 @@ from pydantic import BaseModel
 from typing import List, Tuple, Optional, Dict, Any, Callable, Awaitable
 from pathlib import Path
 from urllib.parse import unquote
+import os as _os
+BASE_PATH = _os.environ.get('BASE_PATH', '').rstrip('/')
+
+def _inject_base_path(html: str) -> str:
+    """在 <head> 中注入 BASE_PATH 变量"""
+    if BASE_PATH:
+        inject = f'<script>window.__BASE_PATH__ = "{BASE_PATH}";</script>'
+        html = html.replace('<head>', '<head>\n' + inject, 1)
+    return html
 from urllib import request as urllib_request, error as urllib_error
 import hashlib
 import secrets
@@ -1320,7 +1329,7 @@ async def root():
     login_path = os.path.join(static_dir, 'login.html')
     if os.path.exists(login_path):
         with open(login_path, 'r', encoding='utf-8') as f:
-            return HTMLResponse(f.read())
+            return HTMLResponse(_inject_base_path(f.read()))
     else:
         return HTMLResponse('<h3>Login page not found</h3>')
 
@@ -1391,7 +1400,7 @@ async def login_page():
     login_path = os.path.join(static_dir, 'login.html')
     if os.path.exists(login_path):
         with open(login_path, 'r', encoding='utf-8') as f:
-            return HTMLResponse(f.read())
+            return HTMLResponse(_inject_base_path(f.read()))
     else:
         return HTMLResponse('<h3>Login page not found</h3>')
 
@@ -1429,7 +1438,7 @@ async def register_page():
     register_path = os.path.join(static_dir, 'register.html')
     if os.path.exists(register_path):
         with open(register_path, 'r', encoding='utf-8') as f:
-            return HTMLResponse(f.read())
+            return HTMLResponse(_inject_base_path(f.read()))
     else:
         return HTMLResponse('<h3>Register page not found</h3>')
 
@@ -1463,17 +1472,19 @@ async def admin_page():
             html_content = f.read()
             
             # 替换 app.js 的版本号参数
-            js_pattern = r'/static/js/app\.js\?v=[^"\'\s>]+'
-            js_new_url = f'/static/js/app.js?v={js_version}'
+            js_pattern = r'/?(?:static/js/app\.js)\?v=[^"\'\s>]+'
+            js_new_url = f'static/js/app.js?v={js_version}'
             if re.search(js_pattern, html_content):
                 html_content = re.sub(js_pattern, js_new_url, html_content)
                 logger.debug(f"已替换 app.js 版本号: {js_version}")
-            
+
             # 为 app.css 添加或更新版本号参数
-            css_pattern = r'/static/css/app\.css(\?v=[^"\'\s>]+)?'
-            css_new_url = f'/static/css/app.css?v={css_version}'
+            css_pattern = r'/?(?:static/css/app\.css)(\?v=[^"\'\s>]+)?'
+            css_new_url = f'static/css/app.css?v={css_version}'
             html_content = re.sub(css_pattern, css_new_url, html_content)
-            
+
+            html_content = _inject_base_path(html_content)
+
             return HTMLResponse(html_content)
     except Exception as e:
         logger.error(f"读取或处理 index.html 失败: {e}")

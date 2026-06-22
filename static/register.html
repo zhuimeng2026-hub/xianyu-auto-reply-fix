@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>用户注册 - 闲鱼管理系统</title>
-    <link rel="icon" type="image/png" href="/static/favicon.png">
-    <link rel="stylesheet" href="/static/lib/bootstrap/bootstrap.min.css">
-    <link rel="stylesheet" href="/static/lib/bootstrap-icons/bootstrap-icons.css">
+    <link rel="icon" type="image/png" href="static/favicon.png">
+    <link rel="stylesheet" href="static/lib/bootstrap/bootstrap.min.css">
+    <link rel="stylesheet" href="static/lib/bootstrap-icons/bootstrap-icons.css">
     <style>
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -260,13 +260,14 @@
 
             <div class="login-link">
                 <span class="text-muted">已有账号？</span>
-                <a href="/login.html">立即登录</a>
+                <a href="login.html">立即登录</a>
             </div>
         </div>
     </div>
 
-    <script src="/static/lib/bootstrap/bootstrap.bundle.min.js"></script>
+    <script src="static/lib/bootstrap/bootstrap.bundle.min.js"></script>
     <script>
+        const basePath = window.__BASE_PATH__ || '';
         let countdownTimer = null;
         let countdownSeconds = 0;
         let sessionId = generateSessionId();
@@ -302,7 +303,7 @@
                 captchaLoading.style.display = 'block';
                 captchaImage.style.display = 'none';
 
-                const response = await fetch('/generate-captcha', {
+                const response = await fetch(basePath + '/generate-captcha', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -347,7 +348,7 @@
             }
 
             try {
-                const response = await fetch('/verify-captcha', {
+                const response = await fetch(basePath + '/verify-captcha', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -439,7 +440,7 @@
             }
             
             try {
-                const response = await fetch('/send-verification-code', {
+                const response = await fetch(basePath + '/send-verification-code', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -511,7 +512,7 @@
             }
             
             try {
-                const response = await fetch('/register', {
+                const response = await fetch(basePath + '/register', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -529,7 +530,7 @@
                 if (result.success) {
                     showAlert(result.message, 'success');
                     setTimeout(() => {
-                        window.location.href = '/login.html';
+                        window.location.href = (window.__BASE_PATH__ || '') + '/login.html';
                     }, 2000);
                 } else {
                     showAlert(result.message);

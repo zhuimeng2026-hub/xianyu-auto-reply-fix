@@ -2,7 +2,7 @@
 // ================================
 // 全局变量和配置
 // ================================
-const apiBase = location.origin;
+const apiBase = location.origin + (window.__BASE_PATH__ || '');
 let keywordsData = {};
 let currentCookieId = '';
 let editCookieId = '';
@@ -1206,7 +1206,7 @@ async function loadOrderDashboardMetrics() {
 
     try {
         const token = localStorage.getItem('auth_token');
-        const response = await fetch('/api/orders', {
+        const response = await fetch(apiBase + '/api/orders', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -1280,7 +1280,7 @@ async function loadSalesSummary() {
     
     try {
         const token = localStorage.getItem('auth_token');
-        const response = await fetch('/api/sales/summary', {
+        const response = await fetch(apiBase + '/api/sales/summary', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -1367,7 +1367,7 @@ function startSalesSummaryRefreshTimer() {
                 return;
             }
             
-            const response = await fetch('/api/sales/summary', {
+            const response = await fetch(apiBase + '/api/sales/summary', {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -1462,7 +1462,7 @@ async function loadSalesChart(period) {
         const startDateStr = startDate.toISOString().split('T')[0];
         const endDateStr = now.toISOString().split('T')[0];
 
-        const response = await fetch(`/api/sales?start_date=${startDateStr}&end_date=${endDateStr}`, {
+        const response = await fetch(`${apiBase}/api/sales?start_date=${startDateStr}&end_date=${endDateStr}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -1501,7 +1501,7 @@ async function loadCustomSalesChart() {
 
     try {
         const token = localStorage.getItem('auth_token');
-        const response = await fetch(`/api/sales?start_date=${startDate}&end_date=${endDate}`, {
+        const response = await fetch(`${apiBase}/api/sales?start_date=${startDate}&end_date=${endDate}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -3365,7 +3365,7 @@ async function fetchJSON(url, opts = {}) {
     if (res.status === 401) {
         // 未授权，跳转到登录页面
         localStorage.removeItem('auth_token');
-        window.location.href = '/';
+        window.location.href = (window.__BASE_PATH__ || '') + '/';
         return;
     }
     if (!res.ok) {
@@ -4096,7 +4096,7 @@ async function exportPersonalBlacklist() {
         });
         if (response.status === 401) {
             localStorage.removeItem('auth_token');
-            window.location.href = '/';
+            window.location.href = (window.__BASE_PATH__ || '') + '/';
             return;
         }
         if (!response.ok) {
@@ -6312,7 +6312,7 @@ async function logout() {
     
     try {
     if (authToken) {
-        await fetch('/logout', {
+        await fetch(apiBase + '/logout', {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${authToken}`
@@ -6320,11 +6320,11 @@ async function logout() {
         });
     }
     localStorage.removeItem('auth_token');
-    window.location.href = '/';
+    window.location.href = (window.__BASE_PATH__ || '') + '/';
     } catch (err) {
     console.error('登出失败:', err);
     localStorage.removeItem('auth_token');
-    window.location.href = '/';
+    window.location.href = (window.__BASE_PATH__ || '') + '/';
     }
 }
 
@@ -6332,12 +6332,12 @@ async function logout() {
 async function checkAuth() {
     const token = getAuthToken();
     if (!token) {
-    window.location.href = '/';
+    window.location.href = (window.__BASE_PATH__ || '') + '/';
     return false;
     }
 
     try {
-    const response = await fetch('/verify', {
+    const response = await fetch(apiBase + '/verify', {
         headers: {
         'Authorization': `Bearer ${token}`
         }
@@ -6346,7 +6346,7 @@ async function checkAuth() {
 
     if (!result.authenticated) {
         localStorage.removeItem('auth_token');
-        window.location.href = '/';
+        window.location.href = (window.__BASE_PATH__ || '') + '/';
         return false;
     }
 
@@ -6396,7 +6396,7 @@ async function checkAuth() {
     return true;
     } catch (err) {
     localStorage.removeItem('auth_token');
-    window.location.href = '/';
+    window.location.href = (window.__BASE_PATH__ || '') + '/';
     return false;
     }
 }
@@ -10519,7 +10519,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // 3秒后跳转到登录页面
             setTimeout(() => {
                 localStorage.removeItem('auth_token');
-                window.location.href = '/login.html';
+                window.location.href = (window.__BASE_PATH__ || '') + '/login.html';
             }, 3000);
             } else {
             showToast(`密码更新失败: ${result.message}`, 'danger');
@@ -10860,7 +10860,7 @@ async function doRestartSystem() {
     try {
         showToast('正在重启系统...', 'info');
 
-        const response = await fetch('/api/update/restart', {
+        const response = await fetch(apiBase + '/api/update/restart', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${authToken}`
@@ -15637,7 +15637,7 @@ async function loadSystemSettings() {
 // 加载API安全设置
 async function loadAPISecuritySettings() {
     try {
-        const response = await fetch('/system-settings', {
+        const response = await fetch(apiBase + '/system-settings', {
             headers: {
                 'Authorization': `Bearer ${authToken}`
             }
@@ -15661,7 +15661,7 @@ async function loadAPISecuritySettings() {
 
 async function loadRiskControlNightSettings() {
     try {
-        const response = await fetch('/system-settings', {
+        const response = await fetch(apiBase + '/system-settings', {
             headers: {
                 'Authorization': `Bearer ${authToken}`
             }
@@ -15728,7 +15728,7 @@ async function saveRiskControlNightSettings() {
 
     try {
         for (const item of payloads) {
-            const response = await fetch(`/system-settings/${item.key}`, {
+            const response = await fetch(`${apiBase}/system-settings/${item.key}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -15760,7 +15760,7 @@ async function saveRiskControlNightSettings() {
 // 加载防抖延迟设置
 async function loadDebounceDelay() {
     try {
-        const response = await fetch('/system-settings', {
+        const response = await fetch(apiBase + '/system-settings', {
             headers: {
                 'Authorization': `Bearer ${authToken}`
             }
@@ -15788,7 +15788,7 @@ async function saveDebounceDelay() {
         return;
     }
     try {
-        const response = await fetch('/system-settings/message_debounce_delay', {
+        const response = await fetch(apiBase + '/system-settings/message_debounce_delay', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -15858,7 +15858,7 @@ async function updateQQReplySecretKey() {
     }
 
     try {
-        const response = await fetch('/system-settings/qq_reply_secret_key', {
+        const response = await fetch(apiBase + '/system-settings/qq_reply_secret_key', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -15898,7 +15898,7 @@ async function updateQQReplySecretKey() {
 // 加载外发配置
 async function loadOutgoingConfigs() {
     try {
-        const response = await fetch('/system-settings', {
+        const response = await fetch(apiBase + '/system-settings', {
             headers: {
                 'Authorization': `Bearer ${authToken}`
             }
@@ -16012,7 +16012,7 @@ async function saveOutgoingConfigs(event) {
     try {
         // 逐个保存配置项
         for (const [key, value] of Object.entries(configs)) {
-            const response = await fetch(`/system-settings/${key}`, {
+            const response = await fetch(`${apiBase}/system-settings/${key}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -16044,7 +16044,7 @@ async function saveOutgoingConfigs(event) {
 // 加载注册设置
 async function loadRegistrationSettings() {
     try {
-        const response = await fetch('/registration-status');
+        const response = await fetch(apiBase + '/registration-status');
         if (response.ok) {
             const data = await response.json();
             const checkbox = document.getElementById('registrationEnabled');
@@ -16061,7 +16061,7 @@ async function loadRegistrationSettings() {
 // 加载默认登录信息设置
 async function loadLoginInfoSettings() {
     try {
-        const response = await fetch('/system-settings', {
+        const response = await fetch(apiBase + '/system-settings', {
             headers: {
                 'Authorization': `Bearer ${authToken}`
             }
@@ -16103,7 +16103,7 @@ async function updateLoginInfoSettings() {
         // 更新用户注册设置
         if (registrationCheckbox) {
             const regEnabled = registrationCheckbox.checked;
-            const regResponse = await fetch('/registration-settings', {
+            const regResponse = await fetch(apiBase + '/registration-settings', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -16124,7 +16124,7 @@ async function updateLoginInfoSettings() {
         // 更新显示默认登录信息设置
         if (checkbox) {
             const enabled = checkbox.checked;
-            const response = await fetch('/login-info-settings', {
+            const response = await fetch(apiBase + '/login-info-settings', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -16145,7 +16145,7 @@ async function updateLoginInfoSettings() {
         // 更新登录验证码设置
         if (captchaCheckbox) {
             const captchaEnabled = captchaCheckbox.checked;
-            const captchaResponse = await fetch('/login-captcha-settings', {
+            const captchaResponse = await fetch(apiBase + '/login-captcha-settings', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -16311,7 +16311,7 @@ async function startOrdersStream() {
 
         if (response.status === 401) {
             localStorage.removeItem('auth_token');
-            window.location.href = '/';
+            window.location.href = (window.__BASE_PATH__ || '') + '/';
             return;
         }
 
@@ -17840,7 +17840,7 @@ async function loadUserSystemStats() {
         const token = localStorage.getItem('auth_token');
 
         // 获取用户统计
-        const usersResponse = await fetch('/admin/users', {
+        const usersResponse = await fetch(apiBase + '/admin/users', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -17893,7 +17893,7 @@ async function loadUsers() {
 
     try {
         const token = localStorage.getItem('auth_token');
-        const response = await fetch('/admin/users', {
+        const response = await fetch(apiBase + '/admin/users', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -18001,7 +18001,7 @@ async function toggleUserAdmin(userId, username, setAdmin) {
 
     try {
         const token = localStorage.getItem('auth_token');
-        const response = await fetch(`/admin/users/${userId}/admin-status?is_admin=${setAdmin}`, {
+        const response = await fetch(`${apiBase}/admin/users/${userId}/admin-status?is_admin=${setAdmin}`, {
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -18052,7 +18052,7 @@ async function confirmDeleteUser() {
     try {
         const token = localStorage.getItem('auth_token');
 
-        const response = await fetch(`/admin/users/${currentDeleteUserId}`, {
+        const response = await fetch(`${apiBase}/admin/users/${currentDeleteUserId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -18210,7 +18210,7 @@ async function loadTableData() {
     const token = localStorage.getItem('auth_token');
 
     try {
-        const response = await fetch(`/admin/data/${selectedTable}`, {
+        const response = await fetch(`${apiBase}/admin/data/${selectedTable}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -18314,7 +18314,7 @@ async function exportTableData() {
 
     try {
         const token = localStorage.getItem('auth_token');
-        const response = await fetch(`/admin/data/${currentTable}/export`, {
+        const response = await fetch(`${apiBase}/admin/data/${currentTable}/export`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -18356,7 +18356,7 @@ async function clearTableData() {
 
     try {
         const token = localStorage.getItem('auth_token');
-        const response = await fetch(`/admin/data/${currentTable}`, {
+        const response = await fetch(`${apiBase}/admin/data/${currentTable}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -19292,7 +19292,7 @@ async function fetchRiskControlLogsPage(token, {
     if (sessionId) params.set('session_id', sessionId);
     if (resultCode) params.set('result_code', resultCode);
 
-    const response = await fetch(`/admin/risk-control-logs?${params.toString()}`, {
+    const response = await fetch(`${apiBase}/admin/risk-control-logs?${params.toString()}`, {
         headers: {
             'Authorization': `Bearer ${token}`
         }
@@ -19678,7 +19678,7 @@ function filterRiskLogsByStatus(status) {
 async function loadCookieFilterOptions() {
     try {
         const token = localStorage.getItem('auth_token');
-        const response = await fetch('/admin/cookies', {
+        const response = await fetch(apiBase + '/admin/cookies', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -19715,7 +19715,7 @@ async function deleteRiskControlLog(logId) {
 
     try {
         const token = localStorage.getItem('auth_token');
-        const response = await fetch(`/admin/risk-control-logs/${logId}`, {
+        const response = await fetch(`${apiBase}/admin/risk-control-logs/${logId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -19746,7 +19746,7 @@ async function clearRiskControlLogs() {
         const token = localStorage.getItem('auth_token');
 
         // 调用后端批量清空接口（管理员）
-        const response = await fetch('/admin/data/risk_control_logs', {
+        const response = await fetch(apiBase + '/admin/data/risk_control_logs', {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -19802,7 +19802,7 @@ async function handleItemSearch(event) {
 
     try {
         // 检查是否有有效的cookies账户
-        const cookiesCheckResponse = await fetch('/cookies/check', {
+        const cookiesCheckResponse = await fetch(apiBase + '/cookies/check', {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
             }
@@ -19837,7 +19837,7 @@ async function handleItemSearch(event) {
             
             try {
                 checkCount++;
-                const checkResponse = await fetch('/api/captcha/sessions');
+                const checkResponse = await fetch(apiBase + '/api/captcha/sessions');
                 const checkData = await checkResponse.json();
                 
                 if (checkData.sessions && checkData.sessions.length > 0) {
@@ -19868,7 +19868,7 @@ async function handleItemSearch(event) {
                             } else {
                                 // 如果函数未定义，使用备用方案
                                 console.error('showCaptchaVerificationModal 未定义，使用备用方案');
-                                window.location.href = `/api/captcha/control/${session.session_id}`;
+                                window.location.href = `${apiBase}/api/captcha/control/${session.session_id}`;
                             }
                             return;
                         }
@@ -19888,7 +19888,7 @@ async function handleItemSearch(event) {
         }, 1000); // 每秒检查一次
         
         // 使用 Promise 包装，以便使用 finally
-        const fetchPromise = fetch('/items/search_multiple', {
+        const fetchPromise = fetch(apiBase + '/items/search_multiple', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -19935,7 +19935,7 @@ async function handleItemSearch(event) {
                     document.getElementById('searchProgress').textContent = '验证成功，继续搜索商品...';
                     
                     // 重新发起搜索请求
-                    const retryResponse = await fetch('/items/search_multiple', {
+                    const retryResponse = await fetch(apiBase + '/items/search_multiple', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -20991,7 +20991,7 @@ async function loadSystemVersion() {
     try {
         // 先从 version.txt 动态读取本地版本号
         try {
-            const versionResponse = await fetch('/static/version.txt?t=' + Date.now());
+            const versionResponse = await fetch(apiBase + '/static/version.txt?t=' + Date.now());
             if (versionResponse.ok) {
                 LOCAL_VERSION = (await versionResponse.text()).trim();
                 currentSystemVersion = LOCAL_VERSION;
@@ -21466,7 +21466,7 @@ function startCaptchaSessionMonitor() {
     captchaSessionMonitor = setInterval(async () => {
         try {
             checkCount++;
-            const response = await fetch('/api/captcha/sessions');
+            const response = await fetch(apiBase + '/api/captcha/sessions');
             const data = await response.json();
             
             // 每10次检查输出一次日志
@@ -21526,7 +21526,7 @@ function stopCaptchaSessionMonitor() {
 async function testCaptchaSessionMonitor() {
     try {
         console.log('🧪 测试会话监控...');
-        const response = await fetch('/api/captcha/sessions');
+        const response = await fetch(apiBase + '/api/captcha/sessions');
         const data = await response.json();
         console.log('📊 API响应:', data);
         return data;
@@ -21635,7 +21635,7 @@ function startCheckCaptchaCompletion(modal, sessionId) {
     
     checkInterval = setInterval(async () => {
         try {
-            const response = await fetch(`/api/captcha/status/${sessionId}`);
+            const response = await fetch(`${apiBase}/api/captcha/status/${sessionId}`);
             const data = await response.json();
             
             console.log(`检查验证状态: ${sessionId}`, data);
@@ -21682,7 +21682,7 @@ async function checkCaptchaCompletion(modal, sessionId) {
     return new Promise((resolve, reject) => {
         const checkInterval = setInterval(async () => {
             try {
-                const response = await fetch(`/api/captcha/status/${sessionId}`);
+                const response = await fetch(`${apiBase}/api/captcha/status/${sessionId}`);
                 const data = await response.json();
                 
                 if (data.completed) {
@@ -21927,7 +21927,7 @@ async function showVersionInfo(version) {
  */
 async function checkHotUpdate() {
     try {
-        const response = await fetch('/api/update/check', {
+        const response = await fetch(apiBase + '/api/update/check', {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
@@ -22001,7 +22001,7 @@ async function performHotUpdate() {
         showHotUpdateProgress();
         
         // 执行更新
-        const response = await fetch('/api/update/apply', {
+        const response = await fetch(apiBase + '/api/update/apply', {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
@@ -22332,7 +22332,7 @@ async function restartApplication() {
     try {
         showToast('正在重启应用...', 'info');
         
-        const response = await fetch('/api/update/restart', {
+        const response = await fetch(apiBase + '/api/update/restart', {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
@@ -22579,7 +22579,7 @@ async function refreshChatBlacklistStatus() {
         if (response.status === 401) {
             stopChatStream();
             localStorage.removeItem('auth_token');
-            window.location.href = '/';
+            window.location.href = (window.__BASE_PATH__ || '') + '/';
             return;
         }
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -22727,7 +22727,7 @@ async function hydrateChatUserInfos(sessions) {
         if (response.status === 401) {
             stopChatStream();
             localStorage.removeItem('auth_token');
-            window.location.href = '/';
+            window.location.href = (window.__BASE_PATH__ || '') + '/';
             return;
         }
         if (!response.ok) return;
@@ -23396,7 +23396,7 @@ async function connectChatStream() {
                 stopChatStream();
                 localStorage.removeItem('auth_token');
                 showToast('登录已失效，请重新登录', 'warning');
-                window.location.href = '/';
+                window.location.href = (window.__BASE_PATH__ || '') + '/';
                 return;
             }
             throw new Error(`HTTP ${response.status}`);

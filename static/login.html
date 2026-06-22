@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>登录 - 闲鱼管理系统</title>
-  <link rel="icon" type="image/png" href="/static/favicon.png">
-  <link rel="stylesheet" href="/static/lib/bootstrap/bootstrap.min.css">
-  <link rel="stylesheet" href="/static/lib/bootstrap-icons/bootstrap-icons.css">
+  <link rel="icon" type="image/png" href="static/favicon.png">
+  <link rel="stylesheet" href="static/lib/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="static/lib/bootstrap-icons/bootstrap-icons.css">
   <style>
     :root {
       --primary-color: #0d6efd;
@@ -118,7 +118,7 @@
 <body>
   <div class="login-container">
     <div class="login-header">
-      <img src="/static/favicon.png" alt="Logo" height="64" class="mb-3">
+      <img src="static/favicon.png" alt="Logo" height="64" class="mb-3">
       <h2>欢迎登录</h2>
       <p>闲鱼管理系统</p>
     </div>
@@ -267,7 +267,7 @@
       <!-- 注册链接 -->
       <div id="registerSection" class="text-center mt-3">
         <span class="text-muted">还没有账号？</span>
-        <a href="/register.html" class="text-decoration-none">
+        <a href="register.html" class="text-decoration-none">
           <i class="bi bi-person-plus me-1"></i>立即注册
         </a>
       </div>
@@ -301,8 +301,9 @@
     </div>
   </div>
 
-  <script src="/static/lib/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="static/lib/bootstrap/bootstrap.bundle.min.js"></script>
   <script>
+    const basePath = window.__BASE_PATH__ || '';
     const loginForm = document.getElementById('loginForm');
     const errorAlert = document.getElementById('errorAlert');
     const errorMessage = document.getElementById('errorMessage');
@@ -318,7 +319,7 @@
     // 检查登录验证码是否启用
     async function checkLoginCaptchaEnabled() {
       try {
-        const response = await fetch('/api/login-captcha-enabled');
+        const response = await fetch(basePath + '/api/login-captcha-enabled');
         const result = await response.json();
         loginCaptchaEnabled = result.enabled;
         securityCaptchaRequired = result.enabled;
@@ -371,7 +372,7 @@
     // 检查是否需要安全验证码
     async function checkSecurityCaptchaRequired() {
       try {
-        const response = await fetch('/captcha/check-required');
+        const response = await fetch(basePath + '/captcha/check-required');
         const result = await response.json();
         securityCaptchaRequired = result.required;
         
@@ -410,7 +411,7 @@
       captchaImage.style.opacity = '0.5';
       
       try {
-        const response = await fetch('/captcha/generate');
+        const response = await fetch(basePath + '/captcha/generate');
         
         // 获取验证码ID
         securityCaptchaId = response.headers.get('X-Captcha-Id');
@@ -445,7 +446,7 @@
       captchaImage.style.opacity = '0.5';
       
       try {
-        const response = await fetch('/captcha/generate');
+        const response = await fetch(basePath + '/captcha/generate');
         
         // 获取验证码ID
         emailSecurityCaptchaId = response.headers.get('X-Captcha-Id');
@@ -575,7 +576,7 @@
           loginData = { email, verification_code: verificationCode };
         }
 
-        const response = await fetch('/login', {
+        const response = await fetch(basePath + '/login', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -606,7 +607,7 @@
             window.location.href = redirectUrl;
           } else {
             // 默认跳转到管理页面
-            window.location.href = '/admin';
+            window.location.href = (window.__BASE_PATH__ || '') + '/admin';
           }
         } else {
           showError(result.message);
@@ -631,7 +632,7 @@
     const token = localStorage.getItem('auth_token');
     if (token) {
       // 验证token是否有效
-      fetch('/verify', {
+      fetch(basePath + '/verify', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -708,7 +709,7 @@
       captchaImage.style.display = 'none';
 
       try {
-        const response = await fetch('/generate-captcha', {
+        const response = await fetch(basePath + '/generate-captcha', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -753,7 +754,7 @@
       }
 
       try {
-        const response = await fetch('/verify-captcha', {
+        const response = await fetch(basePath + '/verify-captcha', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -854,7 +855,7 @@
       }
 
       try {
-        const response = await fetch('/send-verification-code', {
+        const response = await fetch(basePath + '/send-verification-code', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -882,7 +883,7 @@
     // 检查注册状态
     async function checkRegistrationStatus() {
       try {
-        const response = await fetch('/registration-status');
+        const response = await fetch(basePath + '/registration-status');
         if (response.ok) {
           const data = await response.json();
           const registerSection = document.getElementById('registerSection');
@@ -899,7 +900,7 @@
     // 检查默认登录信息显示状态
     async function checkLoginInfoStatus() {
       try {
-        const response = await fetch('/login-info-status');
+        const response = await fetch(basePath + '/login-info-status');
         const result = await response.json();
 
         const defaultLoginInfo = document.getElementById('defaultLoginInfo');
